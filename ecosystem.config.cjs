@@ -3,20 +3,16 @@ module.exports = {
     {
       name: "cs-api",
       cwd: "/opt/crypto-signals/apps/api",
-      script: "npx",
-      args: "tsx src/index.ts",
-      env: {
-        NODE_ENV: "production",
-      },
+      script: "/usr/bin/bash",
+      args: "-c 'pnpm start'",
+      interpreter: "none",
     },
     {
       name: "cs-monitor",
       cwd: "/opt/crypto-signals/apps/monitor",
-      script: "npx",
-      args: "tsx src/index.ts",
-      env: {
-        NODE_ENV: "production",
-      },
+      script: "/usr/bin/bash",
+      args: "-c 'pnpm start'",
+      interpreter: "none",
     },
   ],
 };

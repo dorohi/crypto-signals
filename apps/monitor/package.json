@@ -5,17 +5,17 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "tsx src/index.ts"
   },
   "dependencies": {
     "@crypto-signals/db": "workspace:*",
     "@crypto-signals/shared": "workspace:*",
     "dotenv": "^17.3.1",
-    "grammy": "^1.35.0"
+    "grammy": "^1.35.0",
+    "tsx": "^4.19.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
 }
