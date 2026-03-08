@@ -3,8 +3,8 @@ module.exports = {
     {
       name: "cs-api",
       cwd: "/opt/crypto-signals/apps/api",
-      script: "node",
-      args: "dist/index.js",
+      script: "npx",
+      args: "tsx src/index.ts",
       env: {
         NODE_ENV: "production",
       },
