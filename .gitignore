@@ -1,0 +1,10 @@
+.idea/
+node_modules/
+dist/
+.claude/
+.next/
+*.db
+*.db-journal
+.env
+.env.local
+.turbo

@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String          @id @default(cuid())
+  email                 String          @unique
+  passwordHash          String
+  name                  String
+  defaultThreshold      Float           @default(10.0)
+  telegramChatId        String?         @unique
+  telegramLinkCode      String?         @unique
+  telegramLinkExpiresAt DateTime?
+  watchlistItems        WatchlistItem[]
+  alerts                Alert[]
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+}
+
+model Coin {
+  id             String          @id // coingecko id: "bitcoin"
+  symbol         String // "btc"
+  name           String // "Bitcoin"
+  image          String?
+  currentPrice   Float?
+  marketCap      Float?
+  marketCapRank  Int?
+  priceUpdatedAt DateTime?
+  watchlistItems WatchlistItem[]
+  priceHistory   PriceSnapshot[]
+  alerts         Alert[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([marketCapRank])
+  @@index([symbol])
+}
+
+model WatchlistItem {
+  id              String   @id @default(cuid())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  coin            Coin     @relation(fields: [coinId], references: [id], onDelete: Cascade)
+  coinId          String
+  customThreshold Float?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, coinId])
+  @@index([userId])
+  @@index([coinId])
+}
+
+model PriceSnapshot {
+  id         String   @id @default(cuid())
+  coin       Coin     @relation(fields: [coinId], references: [id], onDelete: Cascade)
+  coinId     String
+  price      Float
+  recordedAt DateTime @default(now())
+
+  @@index([coinId, recordedAt])
+}
+
+model Alert {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  coin          Coin     @relation(fields: [coinId], references: [id], onDelete: Cascade)
+  coinId        String
+  previousPrice Float
+  currentPrice  Float
+  changePercent Float
+  threshold     Float
+  notifiedViaTg Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([coinId])
+}
