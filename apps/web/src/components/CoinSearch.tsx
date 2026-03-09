@@ -19,6 +19,7 @@ export const CoinSearch = observer(function CoinSearch() {
   const { coinStore, watchlistStore } = useStore();
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
+  const [alreadyAdded, setAlreadyAdded] = useState<Set<string>>(new Set());
 
   const handleSearch = useCallback(
     (value: string) => {
@@ -36,10 +37,12 @@ export const CoinSearch = observer(function CoinSearch() {
     setAdding(coinId);
     try {
       await watchlistStore.addCoin(coinId);
+      setAlreadyAdded((prev) => new Set(prev).add(coinId));
       setQuery("");
       coinStore.clearSearch();
     } catch {
-      // error handled in store
+      // 409 — уже в списке
+      setAlreadyAdded((prev) => new Set(prev).add(coinId));
     }
     setAdding(null);
   };
@@ -72,7 +75,7 @@ export const CoinSearch = observer(function CoinSearch() {
         >
           <List dense disablePadding>
             {coinStore.searchResults.map((coin: any) => {
-              const inWatchlist = watchlistCoinIds.has(coin.id);
+              const inWatchlist = watchlistCoinIds.has(coin.id) || alreadyAdded.has(coin.id);
               return (
                 <ListItem
                   key={coin.id}
