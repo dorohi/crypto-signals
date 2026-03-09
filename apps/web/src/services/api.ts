@@ -73,11 +73,23 @@ class ApiClient {
     );
   }
 
-  // Watchlist
-  getWatchlist(page = 1, limit = 20) {
-    return this.request<{ data: any[]; total: number; page: number; limit: number }>(
-      `/watchlist?page=${page}&limit=${limit}`
+  getCoinDetails(id: string) {
+    return this.request<any>(`/coins/${id}/details`);
+  }
+
+  getCoinChart(id: string, days = 7) {
+    return this.request<{ prices: number[][]; market_caps: number[][]; total_volumes: number[][] }>(
+      `/coins/${id}/chart?days=${days}`
     );
+  }
+
+  getCoinOhlc(id: string, days = 7) {
+    return this.request<number[][]>(`/coins/${id}/ohlc?days=${days}`);
+  }
+
+  // Watchlist
+  getWatchlist() {
+    return this.request<{ data: any[] }>("/watchlist");
   }
 
   addToWatchlist(coinId: string, customThreshold?: number) {

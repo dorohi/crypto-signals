@@ -1,6 +1,5 @@
-"use client";
-
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useStore } from "@/stores/RootStore";
 import {
@@ -13,13 +12,15 @@ import {
   Avatar,
   Button,
   Box,
+  InputAdornment,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 
 export const CoinSearch = observer(function CoinSearch() {
   const { coinStore, watchlistStore } = useStore();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
-  const [alreadyAdded, setAlreadyAdded] = useState<Set<string>>(new Set());
 
   const handleSearch = useCallback(
     (value: string) => {
@@ -37,12 +38,10 @@ export const CoinSearch = observer(function CoinSearch() {
     setAdding(coinId);
     try {
       await watchlistStore.addCoin(coinId);
-      setAlreadyAdded((prev) => new Set(prev).add(coinId));
       setQuery("");
       coinStore.clearSearch();
     } catch {
-      // 409 — уже в списке
-      setAlreadyAdded((prev) => new Set(prev).add(coinId));
+      // error handled in store
     }
     setAdding(null);
   };
@@ -56,9 +55,16 @@ export const CoinSearch = observer(function CoinSearch() {
       <TextField
         fullWidth
         size="small"
-        placeholder="Поиск монет для добавления..."
+        placeholder="Поиск монет..."
         value={query}
         onChange={(e) => handleSearch(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" color="action" />
+            </InputAdornment>
+          ),
+        }}
       />
       {coinStore.searchResults.length > 0 && (
         <Paper
@@ -75,7 +81,7 @@ export const CoinSearch = observer(function CoinSearch() {
         >
           <List dense disablePadding>
             {coinStore.searchResults.map((coin: any) => {
-              const inWatchlist = watchlistCoinIds.has(coin.id) || alreadyAdded.has(coin.id);
+              const inWatchlist = watchlistCoinIds.has(coin.id);
               return (
                 <ListItem
                   key={coin.id}
@@ -107,8 +113,10 @@ export const CoinSearch = observer(function CoinSearch() {
                   <ListItemText
                     primary={coin.name}
                     secondary={coin.symbol.toUpperCase()}
-                    primaryTypographyProps={{ fontSize: 14 }}
+                    primaryTypographyProps={{ fontSize: 14, sx: { cursor: "pointer", "&:hover": { textDecoration: "underline" } } }}
                     secondaryTypographyProps={{ fontSize: 11 }}
+                    onClick={() => { navigate(`/coin/${coin.id}`); setQuery(""); coinStore.clearSearch(); }}
+                    sx={{ cursor: "pointer" }}
                   />
                 </ListItem>
               );

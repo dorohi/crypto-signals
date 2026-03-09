@@ -13,6 +13,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
+    "lightweight-charts": "^5.1.0",
     "mobx": "^6.13.0",
     "mobx-react-lite": "^4.1.0",
     "react": "^19.0.0",

@@ -48,89 +48,88 @@ const SettingsPage = observer(function SettingsPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 560 }}>
+    <Box>
       <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>Настройки</Typography>
 
-      <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
-        <Typography variant="h6" sx={{ mb: 1 }}>Порог и период сверки</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Монитор сравнивает текущую цену с ценой за указанный период назад.
-          Если разница превышает порог — создаётся оповещение.
-        </Typography>
-        <form onSubmit={handleSave}>
+      {/* Два блока сверху в ряд */}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mb: 2 }}>
+        <Paper variant="outlined" sx={{ p: 3, flex: 1 }}>
+          <Typography variant="h6" sx={{ mb: 1 }}>Порог и период</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Монитор сравнивает текущую цену с ценой за указанный период. Если разница превышает порог — оповещение.
+          </Typography>
+          <form onSubmit={handleSave}>
+            <Stack spacing={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <TextField
+                  label="Порог"
+                  type="number"
+                  value={threshold}
+                  onChange={(e) => setThreshold(e.target.value)}
+                  inputProps={{ min: 0.1, step: 0.1 }}
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                  }}
+                  sx={{ flex: 1 }}
+                />
+                <TextField
+                  label="Период сверки"
+                  type="number"
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  inputProps={{ min: 1, step: 1 }}
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">мин</InputAdornment>,
+                  }}
+                  sx={{ flex: 1 }}
+                />
+              </Stack>
+              <Button type="submit" variant="contained" disabled={settingsStore.saving}>
+                {settingsStore.saving ? "Сохранение..." : "Сохранить"}
+              </Button>
+            </Stack>
+          </form>
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 3, flex: 1 }}>
+          <Typography variant="h6" sx={{ mb: 1 }}>Направление мониторинга</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            При каком изменении цены получать оповещения.
+          </Typography>
           <Stack spacing={2}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                label="Порог"
-                type="number"
-                value={threshold}
-                onChange={(e) => setThreshold(e.target.value)}
-                inputProps={{ min: 0.1, step: 0.1 }}
-                InputProps={{
-                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                }}
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                label="Период сверки"
-                type="number"
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                inputProps={{ min: 1, step: 1 }}
-                InputProps={{
-                  endAdornment: <InputAdornment position="end">мин</InputAdornment>,
-                }}
-                sx={{ flex: 1 }}
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <TrendingUpIcon color="success" />
+                <Box>
+                  <Typography variant="body2">Рост цены</Typography>
+                  <Typography variant="caption" color="text.secondary">Оповещать когда цена выросла</Typography>
+                </Box>
+              </Stack>
+              <Switch
+                checked={settingsStore.alertOnUp}
+                onChange={(_, checked) => settingsStore.updateSettings({ alertOnUp: checked })}
+                disabled={settingsStore.saving}
               />
             </Stack>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={settingsStore.saving}
-            >
-              {settingsStore.saving ? "Сохранение..." : "Сохранить"}
-            </Button>
-          </Stack>
-        </form>
-      </Paper>
-
-      <Paper variant="outlined" sx={{ p: 3, mb: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>Направление мониторинга</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Выберите, при каком изменении цены получать оповещения.
-        </Typography>
-        <Stack spacing={1}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack direction="row" alignItems="center" spacing={1.5}>
-              <TrendingUpIcon color="success" fontSize="small" />
-              <Box>
-                <Typography variant="body2">Рост цены</Typography>
-                <Typography variant="caption" color="text.secondary">Оповещать когда цена выросла</Typography>
-              </Box>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <TrendingDownIcon color="error" />
+                <Box>
+                  <Typography variant="body2">Падение цены</Typography>
+                  <Typography variant="caption" color="text.secondary">Оповещать когда цена упала</Typography>
+                </Box>
+              </Stack>
+              <Switch
+                checked={settingsStore.alertOnDown}
+                onChange={(_, checked) => settingsStore.updateSettings({ alertOnDown: checked })}
+                disabled={settingsStore.saving}
+              />
             </Stack>
-            <Switch
-              checked={settingsStore.alertOnUp}
-              onChange={(_, checked) => settingsStore.updateSettings({ alertOnUp: checked })}
-              disabled={settingsStore.saving}
-            />
           </Stack>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack direction="row" alignItems="center" spacing={1.5}>
-              <TrendingDownIcon color="error" fontSize="small" />
-              <Box>
-                <Typography variant="body2">Падение цены</Typography>
-                <Typography variant="caption" color="text.secondary">Оповещать когда цена упала</Typography>
-              </Box>
-            </Stack>
-            <Switch
-              checked={settingsStore.alertOnDown}
-              onChange={(_, checked) => settingsStore.updateSettings({ alertOnDown: checked })}
-              disabled={settingsStore.saving}
-            />
-          </Stack>
-        </Stack>
-      </Paper>
+        </Paper>
+      </Stack>
 
+      {/* Как это работает */}
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>Как это работает</Typography>
         <List dense disablePadding>
@@ -144,7 +143,7 @@ const SettingsPage = observer(function SettingsPage() {
           <ListItem disableGutters>
             <ListItemIcon sx={{ minWidth: 36 }}><TrendingUpIcon fontSize="small" color="action" /></ListItemIcon>
             <ListItemText
-              primary="Если цена монеты изменилась больше вашего порога, создаётся оповещение."
+              primary="Сравнивает с максимумом (для падений) и минимумом (для роста) за период — ловит реальные движения."
               primaryTypographyProps={{ variant: "body2", color: "text.secondary" }}
             />
           </ListItem>
@@ -158,7 +157,7 @@ const SettingsPage = observer(function SettingsPage() {
           <ListItem disableGutters>
             <ListItemIcon sx={{ minWidth: 36 }}><TuneIcon fontSize="small" color="action" /></ListItemIcon>
             <ListItemText
-              primary="Вы можете задать индивидуальные пороги для каждой монеты в списке наблюдения."
+              primary="Можно задать индивидуальные пороги и периоды для каждой монеты через меню в списке наблюдения."
               primaryTypographyProps={{ variant: "body2", color: "text.secondary" }}
             />
           </ListItem>

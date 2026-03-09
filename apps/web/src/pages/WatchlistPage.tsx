@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useStore } from "@/stores/RootStore";
 import { CoinSearch } from "@/components/CoinSearch";
@@ -11,7 +12,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
+  Pagination,
   Paper,
   IconButton,
   TextField,
@@ -38,10 +39,15 @@ import TuneIcon from "@mui/icons-material/Tune";
 
 const WatchlistPage = observer(function WatchlistPage() {
   const { watchlistStore, settingsStore } = useStore();
+  const navigate = useNavigate();
 
   // Меню
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuItem, setMenuItem] = useState<any>(null);
+
+  // Пагинация
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 20;
 
   // Диалог удаления
   const [deleteDialog, setDeleteDialog] = useState(false);
@@ -51,9 +57,8 @@ const WatchlistPage = observer(function WatchlistPage() {
   const [editThreshold, setEditThreshold] = useState("");
   const [editPeriod, setEditPeriod] = useState("");
 
-  const handleChangePage = (_: unknown, newPage: number) => {
-    watchlistStore.fetchWatchlist(newPage + 1);
-  };
+  const allItems = watchlistStore.items;
+  const pagedItems = allItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
   const openMenu = (e: React.MouseEvent<HTMLElement>, item: any) => {
     setMenuAnchor(e.currentTarget);
@@ -119,10 +124,10 @@ const WatchlistPage = observer(function WatchlistPage() {
         <Box>
           <Typography variant="h5" fontWeight="bold">Список наблюдения</Typography>
           <Typography variant="body2" color="text.secondary">
-            {watchlistStore.total} монет отслеживается | Порог: {settingsStore.defaultThreshold}% | Период: {settingsStore.checkPeriodMinutes} мин
+            {allItems.length} монет отслеживается | Порог: {settingsStore.defaultThreshold}% | Период: {settingsStore.checkPeriodMinutes} мин
           </Typography>
         </Box>
-        <Box sx={{ width: { xs: "100%", sm: 280 } }}>
+        <Box sx={{ width: { xs: "100%", sm: 350, md: 420 } }}>
           <CoinSearch />
         </Box>
       </Stack>
@@ -146,7 +151,7 @@ const WatchlistPage = observer(function WatchlistPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {watchlistStore.items.map((item: any) => (
+                {pagedItems.map((item: any) => (
                   <TableRow key={item.id} hover sx={{ opacity: item.isActive ? 1 : 0.45 }}>
                     <TableCell sx={{ color: "text.secondary" }}>
                       {item.coin.marketCapRank || "—"}
@@ -157,7 +162,7 @@ const WatchlistPage = observer(function WatchlistPage() {
                           <Avatar src={item.coin.image} sx={{ width: 24, height: 24 }} />
                         )}
                         <Box>
-                          <Typography variant="body2" fontWeight="medium" sx={{ maxWidth: { xs: 120, md: "none" }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.coin.name}</Typography>
+                          <Typography variant="body2" fontWeight="medium" sx={{ maxWidth: { xs: 120, md: "none" }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer", "&:hover": { textDecoration: "underline" } }} onClick={() => navigate(`/coin/${item.coinId}`)}>{item.coin.name}</Typography>
                           <Typography variant="caption" color="text.secondary">{item.coin.symbol.toUpperCase()}</Typography>
                         </Box>
                       </Stack>
@@ -189,7 +194,7 @@ const WatchlistPage = observer(function WatchlistPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {watchlistStore.items.length === 0 && (
+                {allItems.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                       <Typography color="text.secondary">
@@ -201,15 +206,17 @@ const WatchlistPage = observer(function WatchlistPage() {
               </TableBody>
             </Table>
           </TableContainer>
-          <TablePagination
-            component="div"
-            count={watchlistStore.total}
-            page={watchlistStore.page - 1}
-            onPageChange={handleChangePage}
-            rowsPerPage={watchlistStore.limit}
-            rowsPerPageOptions={[20]}
-            labelDisplayedRows={({ from, to, count }) => `${from}–${to} из ${count}`}
-          />
+          {allItems.length > rowsPerPage && (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 1.5 }}>
+              <Pagination
+                count={Math.ceil(allItems.length / rowsPerPage)}
+                page={page + 1}
+                onChange={(_, p) => setPage(p - 1)}
+                size="small"
+                color="primary"
+              />
+            </Box>
+          )}
         </Paper>
       )}
 

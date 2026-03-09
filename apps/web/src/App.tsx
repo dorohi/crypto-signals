@@ -9,6 +9,7 @@ import WatchlistPage from "@/pages/WatchlistPage";
 import AlertsPage from "@/pages/AlertsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import TelegramPage from "@/pages/TelegramPage";
+import CoinPage from "@/pages/CoinPage";
 
 export const App = observer(function App() {
   const { authStore } = useStore();
@@ -28,6 +29,7 @@ export const App = observer(function App() {
         <Route path="/alerts" element={<AlertsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/telegram" element={<TelegramPage />} />
+        <Route path="/coin/:id" element={<CoinPage />} />
       </Route>
       <Route
         path="*"

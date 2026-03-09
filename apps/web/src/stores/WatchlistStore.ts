@@ -3,9 +3,6 @@ import { api } from "@/services/api";
 
 export class WatchlistStore {
   items: any[] = [];
-  total = 0;
-  page = 1;
-  limit = 20;
   loading = false;
   initialized = false;
   error: string | null = null;
@@ -14,14 +11,12 @@ export class WatchlistStore {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  async fetchWatchlist(page = this.page) {
+  async fetchWatchlist() {
     if (!this.initialized) this.loading = true;
     try {
-      const result = await api.getWatchlist(page, this.limit);
+      const result = await api.getWatchlist();
       runInAction(() => {
         this.items = result.data;
-        this.total = result.total;
-        this.page = result.page;
         this.loading = false;
         this.initialized = true;
       });
@@ -37,7 +32,7 @@ export class WatchlistStore {
   async addCoin(coinId: string, customThreshold?: number) {
     try {
       await api.addToWatchlist(coinId, customThreshold);
-      await this.fetchWatchlist(this.page);
+      await this.fetchWatchlist();
     } catch (e: any) {
       runInAction(() => { this.error = e.message; });
       throw e;
@@ -47,7 +42,9 @@ export class WatchlistStore {
   async removeCoin(itemId: string) {
     try {
       await api.removeFromWatchlist(itemId);
-      await this.fetchWatchlist(this.page);
+      runInAction(() => {
+        this.items = this.items.filter((i) => i.id !== itemId);
+      });
     } catch (e: any) {
       runInAction(() => { this.error = e.message; });
     }
