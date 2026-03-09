@@ -109,13 +109,13 @@ class ApiClient {
 
   // Settings
   getSettings() {
-    return this.request<{ defaultThreshold: number }>("/settings");
+    return this.request<{ defaultThreshold: number; alertOnUp: boolean; alertOnDown: boolean; checkPeriodMinutes: number }>("/settings");
   }
 
-  updateSettings(defaultThreshold: number) {
-    return this.request<{ defaultThreshold: number }>("/settings", {
+  updateSettings(data: { defaultThreshold?: number; alertOnUp?: boolean; alertOnDown?: boolean; checkPeriodMinutes?: number }) {
+    return this.request<{ defaultThreshold: number; alertOnUp: boolean; alertOnDown: boolean; checkPeriodMinutes: number }>("/settings", {
       method: "PUT",
-      body: JSON.stringify({ defaultThreshold }),
+      body: JSON.stringify(data),
     });
   }
 

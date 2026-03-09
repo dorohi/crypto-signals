@@ -13,6 +13,9 @@ model User {
   passwordHash          String
   name                  String
   defaultThreshold      Float           @default(10.0)
+  alertOnUp             Boolean         @default(true)
+  alertOnDown           Boolean         @default(true)
+  checkPeriodMinutes    Int             @default(10)
   telegramChatId        String?         @unique
   telegramLinkCode      String?         @unique
   telegramLinkExpiresAt DateTime?

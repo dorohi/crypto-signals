@@ -7,7 +7,7 @@ export async function checkPrices(bot: Bot): Promise<void> {
   console.log(`[${new Date().toISOString()}] Проверка цен...`);
 
   try {
-    // 1. Get all distinct coin IDs that any user is watching
+    // 1. Все уникальные монеты которые кто-то отслеживает
     const watchedCoins = await prisma.watchlistItem.findMany({
       where: { isActive: true },
       select: { coinId: true },
@@ -22,19 +22,11 @@ export async function checkPrices(bot: Bot): Promise<void> {
 
     console.log(`Получение цен для ${coinIds.length} монет...`);
 
-    // 2. Fetch current prices from CoinGecko
+    // 2. Получить текущие цены с CoinGecko
     const marketData = await fetchCoinPrices(coinIds);
 
-    // 3. For each coin, update price and check for alerts
+    // 3. Обновить цены и сохранить снапшоты
     for (const data of marketData) {
-      // Get previous price from the coin record
-      const coin = await prisma.coin.findUnique({
-        where: { id: data.id },
-      });
-
-      const previousPrice = coin?.currentPrice;
-
-      // Update coin with latest price
       await prisma.coin.update({
         where: { id: data.id },
         data: {
@@ -46,52 +38,108 @@ export async function checkPrices(bot: Bot): Promise<void> {
         },
       });
 
-      // Record price snapshot
       await prisma.priceSnapshot.create({
         data: {
           coinId: data.id,
           price: data.current_price,
         },
       });
+    }
 
-      // Skip alert check if no previous price
-      if (!previousPrice || previousPrice === 0) continue;
+    // 4. Для каждого пользователя — проверить пороги за его период
+    const users = await prisma.user.findMany({
+      where: {
+        watchlistItems: { some: { isActive: true } },
+      },
+      include: {
+        watchlistItems: {
+          where: { isActive: true },
+          select: { coinId: true, customThreshold: true, id: true },
+        },
+      },
+    });
 
-      // Calculate change percentage
-      const changePercent =
-        ((data.current_price - previousPrice) / previousPrice) * 100;
+    for (const user of users) {
+      const periodAgo = new Date(Date.now() - user.checkPeriodMinutes * 60 * 1000);
 
-      // 4. Find all users watching this coin and check thresholds
-      const watchers = await prisma.watchlistItem.findMany({
-        where: { coinId: data.id, isActive: true },
-        include: { user: true },
-      });
+      for (const item of user.watchlistItems) {
+        const coinData = marketData.find((d) => d.id === item.coinId);
+        if (!coinData) continue;
 
-      for (const watcher of watchers) {
-        const threshold =
-          watcher.customThreshold ?? watcher.user.defaultThreshold;
+        // Все снапшоты за период
+        const snapshots = await prisma.priceSnapshot.findMany({
+          where: {
+            coinId: item.coinId,
+            recordedAt: { gte: periodAgo },
+          },
+          select: { price: true },
+        });
 
-        if (Math.abs(changePercent) >= threshold) {
-          // Create alert record
+        if (snapshots.length === 0) continue;
+
+        const prices = snapshots.map((s) => s.price);
+        const maxPrice = Math.max(...prices);
+        const minPrice = Math.min(...prices);
+        const currentPrice = coinData.current_price;
+        const threshold = item.customThreshold ?? user.defaultThreshold;
+
+        // Падение: сравниваем текущую цену с MAX за период
+        const dropPercent = maxPrice > 0
+          ? ((currentPrice - maxPrice) / maxPrice) * 100
+          : 0;
+
+        // Рост: сравниваем текущую цену с MIN за период
+        const risePercent = minPrice > 0
+          ? ((currentPrice - minPrice) / minPrice) * 100
+          : 0;
+
+        // Выбираем самое значительное изменение
+        let changePercent = 0;
+        let referencePrice = 0;
+
+        if (Math.abs(dropPercent) >= Math.abs(risePercent)) {
+          changePercent = dropPercent;
+          referencePrice = maxPrice;
+        } else {
+          changePercent = risePercent;
+          referencePrice = minPrice;
+        }
+
+        const isUp = changePercent > 0;
+        const isDown = changePercent < 0;
+        const directionAllowed =
+          (isUp && user.alertOnUp) || (isDown && user.alertOnDown);
+
+        if (directionAllowed && Math.abs(changePercent) >= threshold) {
+          // Проверить что не отправляли алерт за последний период для этой монеты
+          const recentAlert = await prisma.alert.findFirst({
+            where: {
+              userId: user.id,
+              coinId: item.coinId,
+              createdAt: { gte: periodAgo },
+            },
+          });
+
+          if (recentAlert) continue; // уже отправляли
+
           const alert = await prisma.alert.create({
             data: {
-              userId: watcher.userId,
-              coinId: data.id,
-              previousPrice,
-              currentPrice: data.current_price,
+              userId: user.id,
+              coinId: item.coinId,
+              previousPrice: referencePrice,
+              currentPrice: currentPrice,
               changePercent,
               threshold,
             },
           });
 
-          // Send Telegram notification if user has linked account
-          if (watcher.user.telegramChatId) {
+          if (user.telegramChatId) {
             const sent = await sendAlertNotification(bot, {
-              chatId: watcher.user.telegramChatId,
-              coinName: data.name,
-              coinSymbol: data.symbol,
-              previousPrice,
-              currentPrice: data.current_price,
+              chatId: user.telegramChatId,
+              coinName: coinData.name,
+              coinSymbol: coinData.symbol,
+              previousPrice: referencePrice,
+              currentPrice: currentPrice,
               changePercent,
               threshold,
             });
@@ -105,14 +153,15 @@ export async function checkPrices(bot: Bot): Promise<void> {
           }
 
           console.log(
-            `ОПОВЕЩЕНИЕ: ${data.symbol.toUpperCase()} изменился на ${changePercent.toFixed(2)}% ` +
-              `(${previousPrice} -> ${data.current_price}) для пользователя ${watcher.user.email}`
+            `ОПОВЕЩЕНИЕ: ${coinData.symbol.toUpperCase()} изменился на ${changePercent.toFixed(2)}% ` +
+              `за ${user.checkPeriodMinutes} мин (${referencePrice} -> ${currentPrice}) ` +
+              `для ${user.email}`
           );
         }
       }
     }
 
-    // 5. Cleanup old price snapshots (keep last 7 days)
+    // 5. Очистка старых снапшотов (хранить 7 дней)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const deleted = await prisma.priceSnapshot.deleteMany({
       where: { recordedAt: { lt: sevenDaysAgo } },

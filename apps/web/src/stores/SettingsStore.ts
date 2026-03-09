@@ -3,6 +3,9 @@ import { api } from "@/services/api";
 
 export class SettingsStore {
   defaultThreshold = 10;
+  alertOnUp = true;
+  alertOnDown = true;
+  checkPeriodMinutes = 10;
   loading = false;
   saving = false;
 
@@ -16,6 +19,9 @@ export class SettingsStore {
       const result = await api.getSettings();
       runInAction(() => {
         this.defaultThreshold = result.defaultThreshold;
+        this.alertOnUp = result.alertOnUp;
+        this.alertOnDown = result.alertOnDown;
+        this.checkPeriodMinutes = result.checkPeriodMinutes;
         this.loading = false;
       });
     } catch {
@@ -25,12 +31,15 @@ export class SettingsStore {
     }
   }
 
-  async updateThreshold(value: number) {
+  async updateSettings(data: { defaultThreshold?: number; alertOnUp?: boolean; alertOnDown?: boolean; checkPeriodMinutes?: number }) {
     this.saving = true;
     try {
-      const result = await api.updateSettings(value);
+      const result = await api.updateSettings(data);
       runInAction(() => {
         this.defaultThreshold = result.defaultThreshold;
+        this.alertOnUp = result.alertOnUp;
+        this.alertOnDown = result.alertOnDown;
+        this.checkPeriodMinutes = result.checkPeriodMinutes;
         this.saving = false;
       });
     } catch {
