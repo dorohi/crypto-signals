@@ -1,12 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { Box, Container, Toolbar } from "@mui/material";
+import { useStore } from "@/stores/RootStore";
 import { Sidebar } from "@/components/Sidebar";
 import { Navbar } from "@/components/Navbar";
 
 export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { watchlistStore, alertStore, settingsStore } = useStore();
+
+  // Предзагрузка всех данных при входе в дашборд
+  useEffect(() => {
+    watchlistStore.fetchWatchlist();
+    alertStore.fetchAlerts();
+    settingsStore.fetchSettings();
+  }, [watchlistStore, alertStore, settingsStore]);
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>

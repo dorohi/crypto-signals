@@ -74,8 +74,10 @@ class ApiClient {
   }
 
   // Watchlist
-  getWatchlist() {
-    return this.request<{ data: any[] }>("/watchlist");
+  getWatchlist(page = 1, limit = 20) {
+    return this.request<{ data: any[]; total: number; page: number; limit: number }>(
+      `/watchlist?page=${page}&limit=${limit}`
+    );
   }
 
   addToWatchlist(coinId: string, customThreshold?: number) {

@@ -5,6 +5,7 @@ import { CoinStore } from "./CoinStore";
 import { AlertStore } from "./AlertStore";
 import { SettingsStore } from "./SettingsStore";
 import { TelegramStore } from "./TelegramStore";
+import { ThemeStore } from "./ThemeStore";
 
 export class RootStore {
   authStore: AuthStore;
@@ -13,6 +14,7 @@ export class RootStore {
   alertStore: AlertStore;
   settingsStore: SettingsStore;
   telegramStore: TelegramStore;
+  themeStore: ThemeStore;
 
   constructor() {
     this.authStore = new AuthStore();
@@ -21,6 +23,7 @@ export class RootStore {
     this.alertStore = new AlertStore();
     this.settingsStore = new SettingsStore();
     this.telegramStore = new TelegramStore(this);
+    this.themeStore = new ThemeStore();
   }
 }
 

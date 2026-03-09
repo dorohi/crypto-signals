@@ -8,14 +8,22 @@ watchlistRouter.use(requireAuth);
 
 watchlistRouter.get("/", async (req, res) => {
   const auth = (req as any).auth;
+  const page = parseInt((req.query.page as string) || "1");
+  const limit = parseInt((req.query.limit as string) || "20");
+  const skip = (page - 1) * limit;
 
-  const items = await prisma.watchlistItem.findMany({
-    where: { userId: auth.userId },
-    include: { coin: true },
-    orderBy: { coin: { marketCapRank: "asc" } },
-  });
+  const [items, total] = await Promise.all([
+    prisma.watchlistItem.findMany({
+      where: { userId: auth.userId },
+      include: { coin: true },
+      orderBy: { coin: { marketCapRank: "asc" } },
+      skip,
+      take: limit,
+    }),
+    prisma.watchlistItem.count({ where: { userId: auth.userId } }),
+  ]);
 
-  res.json({ data: items });
+  res.json({ data: items, total, page, limit });
 });
 
 watchlistRouter.post("/", async (req, res) => {

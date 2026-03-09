@@ -3,39 +3,43 @@ import { api } from "@/services/api";
 
 export class WatchlistStore {
   items: any[] = [];
+  total = 0;
+  page = 1;
+  limit = 20;
   loading = false;
+  initialized = false;
   error: string | null = null;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  async fetchWatchlist() {
-    this.loading = true;
+  async fetchWatchlist(page = this.page) {
+    if (!this.initialized) this.loading = true;
     try {
-      const result = await api.getWatchlist();
+      const result = await api.getWatchlist(page, this.limit);
       runInAction(() => {
         this.items = result.data;
+        this.total = result.total;
+        this.page = result.page;
         this.loading = false;
+        this.initialized = true;
       });
     } catch (e: any) {
       runInAction(() => {
         this.error = e.message;
         this.loading = false;
+        this.initialized = true;
       });
     }
   }
 
   async addCoin(coinId: string, customThreshold?: number) {
     try {
-      const item = await api.addToWatchlist(coinId, customThreshold);
-      runInAction(() => {
-        this.items.push(item);
-      });
+      await api.addToWatchlist(coinId, customThreshold);
+      await this.fetchWatchlist(this.page);
     } catch (e: any) {
-      runInAction(() => {
-        this.error = e.message;
-      });
+      runInAction(() => { this.error = e.message; });
       throw e;
     }
   }
@@ -43,13 +47,9 @@ export class WatchlistStore {
   async removeCoin(itemId: string) {
     try {
       await api.removeFromWatchlist(itemId);
-      runInAction(() => {
-        this.items = this.items.filter((i) => i.id !== itemId);
-      });
+      await this.fetchWatchlist(this.page);
     } catch (e: any) {
-      runInAction(() => {
-        this.error = e.message;
-      });
+      runInAction(() => { this.error = e.message; });
     }
   }
 
@@ -64,9 +64,7 @@ export class WatchlistStore {
         if (idx !== -1) this.items[idx] = updated;
       });
     } catch (e: any) {
-      runInAction(() => {
-        this.error = e.message;
-      });
+      runInAction(() => { this.error = e.message; });
     }
   }
 }

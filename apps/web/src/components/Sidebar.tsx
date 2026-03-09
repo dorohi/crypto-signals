@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useStore } from "@/stores/RootStore";
+import { themes, type ThemeKey } from "@/lib/theme";
 import {
   Drawer,
   Box,
@@ -13,6 +15,10 @@ import {
   Avatar,
   Typography,
   Tooltip,
+  Menu,
+  MenuItem,
+  ListItemAvatar,
+  IconButton,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -21,6 +27,12 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
+import PaletteIcon from "@mui/icons-material/Palette";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import TerminalIcon from "@mui/icons-material/Terminal";
+import CheckIcon from "@mui/icons-material/Check";
+import PestControlIcon from "@mui/icons-material/PestControl";
 
 const DRAWER_WIDTH = 240;
 const DRAWER_WIDTH_COLLAPSED = 65;
@@ -46,9 +58,17 @@ export const Sidebar = observer(function Sidebar({ open, mobileOpen, onMobileClo
   const navigate = useNavigate();
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("lg"));
-  const { authStore } = useStore();
+  const { authStore, themeStore } = useStore();
+  const [themeAnchor, setThemeAnchor] = useState<null | HTMLElement>(null);
 
   const showText = isMobile || open;
+
+  const themeIcons: Record<ThemeKey, React.ReactNode> = {
+    light: <LightModeIcon fontSize="small" />,
+    dark: <DarkModeIcon fontSize="small" />,
+    matrix: <TerminalIcon fontSize="small" />,
+    spiderman: <PestControlIcon fontSize="small" />,
+  };
 
   const handleLogout = () => {
     authStore.logout();
@@ -65,11 +85,9 @@ export const Sidebar = observer(function Sidebar({ open, mobileOpen, onMobileClo
           onClick={() => { if (isMobile) onMobileClose(); }}
           selected={isActive}
           sx={{
-            borderRadius: 1,
-            mb: 0.5,
             minHeight: 44,
             justifyContent: showText ? "initial" : "center",
-            px: showText ? 2 : 1,
+            px: showText ? 2.5 : 1,
           }}
         >
           <ListItemIcon sx={{ minWidth: showText ? 36 : 0, justifyContent: "center" }}>
@@ -90,47 +108,81 @@ export const Sidebar = observer(function Sidebar({ open, mobileOpen, onMobileClo
       <Toolbar />
 
       {/* Основная навигация */}
-      <List sx={{ flexGrow: 1, px: 1 }}>
+      <List sx={{ flexGrow: 1 }} disablePadding>
         {mainNavItems.map(renderNavItem)}
       </List>
 
       <Divider />
 
       {/* Настройки */}
-      <List sx={{ px: 1 }}>
+      <List disablePadding>
         {bottomNavItems.map(renderNavItem)}
       </List>
 
       <Divider />
 
-      {/* Пользователь и выход */}
-      <Box sx={{ p: 1 }}>
-        <Tooltip title={!showText ? `${authStore.user?.name || ""} — Выйти` : ""} placement="right">
+      {/* Переключатель тем */}
+      <Box>
+        <Tooltip title={!showText ? "Тема" : ""} placement="right">
           <ListItemButton
-            onClick={handleLogout}
+            onClick={(e) => setThemeAnchor(e.currentTarget)}
             sx={{
-              borderRadius: 1,
               minHeight: 44,
               justifyContent: showText ? "initial" : "center",
-              px: showText ? 2 : 1,
+              px: showText ? 2.5 : 1,
             }}
           >
             <ListItemIcon sx={{ minWidth: showText ? 36 : 0, justifyContent: "center" }}>
-              <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: "primary.main", color: "background.default" }}>
-                {userInitials}
-              </Avatar>
+              <PaletteIcon fontSize="small" />
             </ListItemIcon>
-            {showText && (
-              <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" noWrap>{authStore.user?.name}</Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap>{authStore.user?.email}</Typography>
-                </Box>
-                <LogoutIcon fontSize="small" sx={{ color: "text.secondary", ml: 1 }} />
-              </Box>
-            )}
+            {showText && <ListItemText primary={themes[themeStore.current].label} primaryTypographyProps={{ fontSize: 14 }} />}
           </ListItemButton>
         </Tooltip>
+        <Menu
+          anchorEl={themeAnchor}
+          open={Boolean(themeAnchor)}
+          onClose={() => setThemeAnchor(null)}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+        >
+          {(Object.keys(themes) as ThemeKey[]).map((key) => (
+            <MenuItem
+              key={key}
+              selected={themeStore.current === key}
+              onClick={() => { themeStore.setTheme(key); setThemeAnchor(null); }}
+            >
+              <ListItemIcon>{themeIcons[key]}</ListItemIcon>
+              <ListItemText>{themes[key].label}</ListItemText>
+              {themeStore.current === key && <CheckIcon fontSize="small" sx={{ ml: 1 }} />}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Box>
+
+      <Divider />
+
+      {/* Пользователь и выход */}
+      <Box sx={{ px: showText ? 2 : 1, py: 1.5, display: "flex", alignItems: "center", justifyContent: showText ? "space-between" : "center" }}>
+        <Tooltip title={!showText ? authStore.user?.name || "" : ""} placement="right">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+            <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: "primary.main", color: "background.default", flexShrink: 0 }}>
+              {userInitials}
+            </Avatar>
+            {showText && (
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body2" noWrap>{authStore.user?.name}</Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>{authStore.user?.email}</Typography>
+              </Box>
+            )}
+          </Box>
+        </Tooltip>
+        {showText && (
+          <Tooltip title="Выйти">
+            <IconButton size="small" onClick={handleLogout} sx={{ color: "text.secondary" }}>
+              <LogoutIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
     </Box>
   );
@@ -169,7 +221,15 @@ export const Sidebar = observer(function Sidebar({ open, mobileOpen, onMobileClo
         open={open}
         sx={{
           display: { xs: "none", lg: "block" },
-          "& .MuiDrawer-paper": drawerStyles,
+          width: open ? DRAWER_WIDTH : DRAWER_WIDTH_COLLAPSED,
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+          "& .MuiDrawer-paper": {
+            ...drawerStyles,
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+          },
         }}
       >
         {drawerContent}

@@ -6,13 +6,14 @@ export class AlertStore {
   total = 0;
   page = 1;
   loading = false;
+  initialized = false;
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
   async fetchAlerts(page = 1) {
-    this.loading = true;
+    if (!this.initialized) this.loading = true;
     try {
       const result = await api.getAlerts(page);
       runInAction(() => {
@@ -20,10 +21,12 @@ export class AlertStore {
         this.total = result.total;
         this.page = page;
         this.loading = false;
+        this.initialized = true;
       });
     } catch {
       runInAction(() => {
         this.loading = false;
+        this.initialized = true;
       });
     }
   }

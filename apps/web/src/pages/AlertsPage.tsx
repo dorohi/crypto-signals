@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "@/stores/RootStore";
 import {
@@ -17,10 +16,6 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 const AlertsPage = observer(function AlertsPage() {
   const { alertStore } = useStore();
 
-  useEffect(() => {
-    alertStore.fetchAlerts();
-  }, [alertStore]);
-
   const formatPrice = (price: number) => {
     if (price >= 1)
       return `$${price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -36,7 +31,7 @@ const AlertsPage = observer(function AlertsPage() {
         </Typography>
       </Box>
 
-      {alertStore.loading ? (
+      {!alertStore.initialized || alertStore.loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
           <CircularProgress />
         </Box>
