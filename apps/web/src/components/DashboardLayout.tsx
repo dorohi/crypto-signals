@@ -1,28 +1,29 @@
-"use client";
-
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, Container, Toolbar } from "@mui/material";
 import { Sidebar } from "@/components/Sidebar";
 import { Navbar } from "@/components/Navbar";
 
 export function DashboardLayout() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      <Navbar
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        onMobileToggle={() => setMobileOpen(!mobileOpen)}
+      />
       <Sidebar
-        collapsed={collapsed}
-        onToggle={() => setCollapsed(!collapsed)}
+        open={sidebarOpen}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <Navbar onMenuToggle={() => setMobileOpen(!mobileOpen)} />
-        <Box component="main" sx={{ flex: 1, p: { xs: 2, sm: 3 }, overflow: "auto" }}>
+      <Box component="main" sx={{ flexGrow: 1, minWidth: 0, pt: 3, pb: 3 }}>
+        <Toolbar />
+        <Container maxWidth={false} sx={{ px: { xs: 2, md: 3 } }}>
           <Outlet />
-        </Box>
+        </Container>
       </Box>
     </Box>
   );

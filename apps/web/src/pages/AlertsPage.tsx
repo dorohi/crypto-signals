@@ -28,7 +28,7 @@ const AlertsPage = observer(function AlertsPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 800 }}>
+    <Box>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight="bold">История оповещений</Typography>
         <Typography variant="body2" color="text.secondary">

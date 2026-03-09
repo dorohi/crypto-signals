@@ -54,7 +54,7 @@ const WatchlistPage = observer(function WatchlistPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 1200 }}>
+    <Box>
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={2} sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h5" fontWeight="bold">Список наблюдения</Typography>
