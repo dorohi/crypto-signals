@@ -55,7 +55,7 @@ export class WatchlistStore {
 
   async updateItem(
     itemId: string,
-    data: { customThreshold?: number | null; isActive?: boolean }
+    data: { customThreshold?: number | null; customPeriodMinutes?: number | null; isActive?: boolean }
   ) {
     try {
       const updated = await api.updateWatchlistItem(itemId, data);

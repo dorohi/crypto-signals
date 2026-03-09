@@ -70,7 +70,7 @@ watchlistRouter.post("/", async (req, res) => {
 watchlistRouter.put("/:id", async (req, res) => {
   const auth = (req as any).auth;
   const { id } = req.params;
-  const { customThreshold, isActive } = req.body;
+  const { customThreshold, customPeriodMinutes, isActive } = req.body;
 
   const item = await prisma.watchlistItem.findFirst({
     where: { id, userId: auth.userId },
@@ -85,6 +85,7 @@ watchlistRouter.put("/:id", async (req, res) => {
     where: { id },
     data: {
       ...(customThreshold !== undefined && { customThreshold }),
+      ...(customPeriodMinutes !== undefined && { customPeriodMinutes }),
       ...(isActive !== undefined && { isActive }),
     },
     include: { coin: true },

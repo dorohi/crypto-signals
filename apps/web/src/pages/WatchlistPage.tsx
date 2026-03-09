@@ -26,30 +26,30 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
   Button,
+  InputAdornment,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import DeleteIcon from "@mui/icons-material/Delete";
+import TuneIcon from "@mui/icons-material/Tune";
 
 const WatchlistPage = observer(function WatchlistPage() {
   const { watchlistStore, settingsStore } = useStore();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editThreshold, setEditThreshold] = useState("");
+
+  // Меню
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuItem, setMenuItem] = useState<any>(null);
+
+  // Диалог удаления
   const [deleteDialog, setDeleteDialog] = useState(false);
 
-  const handleSaveThreshold = async (itemId: string) => {
-    const value = editThreshold ? parseFloat(editThreshold) : null;
-    await watchlistStore.updateItem(itemId, { customThreshold: value });
-    setEditingId(null);
-  };
+  // Диалог настроек монеты
+  const [settingsDialog, setSettingsDialog] = useState(false);
+  const [editThreshold, setEditThreshold] = useState("");
+  const [editPeriod, setEditPeriod] = useState("");
 
   const handleChangePage = (_: unknown, newPage: number) => {
     watchlistStore.fetchWatchlist(newPage + 1);
@@ -62,7 +62,6 @@ const WatchlistPage = observer(function WatchlistPage() {
 
   const closeMenu = () => {
     setMenuAnchor(null);
-    setMenuItem(null);
   };
 
   const handleToggleActive = () => {
@@ -85,6 +84,28 @@ const WatchlistPage = observer(function WatchlistPage() {
     setMenuItem(null);
   };
 
+  const handleSettingsClick = () => {
+    if (menuItem) {
+      setEditThreshold(menuItem.customThreshold?.toString() || "");
+      setEditPeriod(menuItem.customPeriodMinutes?.toString() || "");
+      setSettingsDialog(true);
+    }
+    setMenuAnchor(null);
+  };
+
+  const handleSettingsSave = async () => {
+    if (menuItem) {
+      const threshold = editThreshold ? parseFloat(editThreshold) : null;
+      const period = editPeriod ? parseInt(editPeriod) : null;
+      await watchlistStore.updateItem(menuItem.id, {
+        customThreshold: threshold,
+        customPeriodMinutes: period,
+      });
+    }
+    setSettingsDialog(false);
+    setMenuItem(null);
+  };
+
   const formatPrice = (price: number | null) => {
     if (!price) return "Н/Д";
     if (price >= 1)
@@ -98,7 +119,7 @@ const WatchlistPage = observer(function WatchlistPage() {
         <Box>
           <Typography variant="h5" fontWeight="bold">Список наблюдения</Typography>
           <Typography variant="body2" color="text.secondary">
-            {watchlistStore.total} монет отслеживается | Порог по умолчанию: {settingsStore.defaultThreshold}%
+            {watchlistStore.total} монет отслеживается | Порог: {settingsStore.defaultThreshold}% | Период: {settingsStore.checkPeriodMinutes} мин
           </Typography>
         </Box>
         <Box sx={{ width: { xs: "100%", sm: 280 } }}>
@@ -116,12 +137,12 @@ const WatchlistPage = observer(function WatchlistPage() {
             <Table size="small" stickyHeader sx={{ "& .MuiTableCell-root": { px: { xs: 1, md: 2 } } }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>#</TableCell>
+                  <TableCell sx={{ width: 50 }}>#</TableCell>
                   <TableCell>Монета</TableCell>
                   <TableCell align="right">Цена</TableCell>
                   <TableCell align="right" sx={{ display: { xs: "none", md: "table-cell" } }}>Капитализация</TableCell>
-                  <TableCell align="right">Порог</TableCell>
-                  <TableCell align="center">Меню</TableCell>
+                  <TableCell align="right">Порог / Период</TableCell>
+                  <TableCell align="center" sx={{ width: 50 }}></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -146,29 +167,20 @@ const WatchlistPage = observer(function WatchlistPage() {
                       {item.coin.marketCap ? `$${(item.coin.marketCap / 1e9).toFixed(1)} млрд` : "Н/Д"}
                     </TableCell>
                     <TableCell align="right">
-                      {editingId === item.id ? (
-                        <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={0.5}>
-                          <TextField
-                            size="small"
-                            type="number"
-                            value={editThreshold}
-                            onChange={(e) => setEditThreshold(e.target.value)}
-                            placeholder={`${settingsStore.defaultThreshold}`}
-                            inputProps={{ step: 0.1, min: 0.1, style: { width: 60, padding: "4px 8px", fontSize: 13 } }}
-                          />
-                          <Typography variant="caption">%</Typography>
-                          <IconButton size="small" color="success" onClick={() => handleSaveThreshold(item.id)}><CheckIcon fontSize="small" /></IconButton>
-                          <IconButton size="small" onClick={() => setEditingId(null)}><CloseIcon fontSize="small" /></IconButton>
-                        </Stack>
-                      ) : (
+                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                         <Chip
-                          label={`${item.customThreshold ? `${item.customThreshold}% (свой)` : `${settingsStore.defaultThreshold}%`}`}
+                          label={`${item.customThreshold ?? settingsStore.defaultThreshold}%`}
                           size="small"
                           variant="outlined"
-                          onClick={() => { setEditingId(item.id); setEditThreshold(item.customThreshold?.toString() || ""); }}
-                          sx={{ cursor: "pointer" }}
+                          color={item.customThreshold ? "primary" : "default"}
                         />
-                      )}
+                        <Chip
+                          label={`${item.customPeriodMinutes ?? settingsStore.checkPeriodMinutes}м`}
+                          size="small"
+                          variant="outlined"
+                          color={item.customPeriodMinutes ? "primary" : "default"}
+                        />
+                      </Stack>
                     </TableCell>
                     <TableCell align="center">
                       <IconButton size="small" onClick={(e) => openMenu(e, item)}>
@@ -203,6 +215,10 @@ const WatchlistPage = observer(function WatchlistPage() {
 
       {/* Меню действий */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>
+        <MenuItem onClick={handleSettingsClick}>
+          <ListItemIcon><TuneIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Настройки</ListItemText>
+        </MenuItem>
         <MenuItem onClick={handleToggleActive}>
           <ListItemIcon>
             {menuItem?.isActive ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
@@ -215,13 +231,51 @@ const WatchlistPage = observer(function WatchlistPage() {
         </MenuItem>
       </Menu>
 
+      {/* Диалог настроек монеты */}
+      <Dialog open={settingsDialog} onClose={() => { setSettingsDialog(false); setMenuItem(null); }} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          {menuItem?.coin?.name} ({menuItem?.coin?.symbol?.toUpperCase()})
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Оставьте пустым, чтобы использовать общие настройки.
+          </Typography>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Порог оповещения"
+              type="number"
+              value={editThreshold}
+              onChange={(e) => setEditThreshold(e.target.value)}
+              placeholder={`${settingsStore.defaultThreshold}`}
+              InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+              inputProps={{ min: 0.1, step: 0.1 }}
+              fullWidth
+            />
+            <TextField
+              label="Период сверки"
+              type="number"
+              value={editPeriod}
+              onChange={(e) => setEditPeriod(e.target.value)}
+              placeholder={`${settingsStore.checkPeriodMinutes}`}
+              InputProps={{ endAdornment: <InputAdornment position="end">мин</InputAdornment> }}
+              inputProps={{ min: 1, step: 1 }}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setSettingsDialog(false); setMenuItem(null); }}>Отмена</Button>
+          <Button onClick={handleSettingsSave} variant="contained">Сохранить</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Диалог подтверждения удаления */}
       <Dialog open={deleteDialog} onClose={() => { setDeleteDialog(false); setMenuItem(null); }}>
         <DialogTitle>Удалить монету?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <Typography variant="body2" color="text.secondary">
             {menuItem?.coin?.name} ({menuItem?.coin?.symbol?.toUpperCase()}) будет удалена из вашего списка наблюдения.
-          </DialogContentText>
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setDeleteDialog(false); setMenuItem(null); }}>Отмена</Button>

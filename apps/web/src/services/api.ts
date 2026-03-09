@@ -87,7 +87,7 @@ class ApiClient {
     });
   }
 
-  updateWatchlistItem(id: string, data: { customThreshold?: number | null; isActive?: boolean }) {
+  updateWatchlistItem(id: string, data: { customThreshold?: number | null; customPeriodMinutes?: number | null; isActive?: boolean }) {
     return this.request<any>(`/watchlist/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),

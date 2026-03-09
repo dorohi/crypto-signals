@@ -54,17 +54,18 @@ export async function checkPrices(bot: Bot): Promise<void> {
       include: {
         watchlistItems: {
           where: { isActive: true },
-          select: { coinId: true, customThreshold: true, id: true },
+          select: { coinId: true, customThreshold: true, customPeriodMinutes: true, id: true },
         },
       },
     });
 
     for (const user of users) {
-      const periodAgo = new Date(Date.now() - user.checkPeriodMinutes * 60 * 1000);
-
       for (const item of user.watchlistItems) {
         const coinData = marketData.find((d) => d.id === item.coinId);
         if (!coinData) continue;
+
+        const periodMinutes = item.customPeriodMinutes ?? user.checkPeriodMinutes;
+        const periodAgo = new Date(Date.now() - periodMinutes * 60 * 1000);
 
         // Все снапшоты за период
         const snapshots = await prisma.priceSnapshot.findMany({
