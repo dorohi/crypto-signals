@@ -73,18 +73,14 @@ class ApiClient {
     );
   }
 
-  getCoinDetails(id: string) {
-    return this.request<any>(`/coins/${id}/details`);
-  }
-
-  getCoinChart(id: string, days = 7) {
-    return this.request<{ prices: number[][]; market_caps: number[][]; total_volumes: number[][] }>(
-      `/coins/${id}/chart?days=${days}`
+  getCoinSnapshots(id: string, minutes = 60) {
+    return this.request<{ data: { price: number; recordedAt: string }[] }>(
+      `/coins/${id}/snapshots?minutes=${minutes}`
     );
   }
 
-  getCoinOhlc(id: string, days = 7) {
-    return this.request<number[][]>(`/coins/${id}/ohlc?days=${days}`);
+  getCoinDetails(id: string) {
+    return this.request<any>(`/coins/${id}/details`);
   }
 
   // Watchlist

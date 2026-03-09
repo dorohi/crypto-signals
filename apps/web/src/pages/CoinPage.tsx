@@ -17,22 +17,22 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { createChart, type IChartApi, type ISeriesApi, ColorType, CandlestickSeries, AreaSeries } from "lightweight-charts";
+import { createChart, type IChartApi, type ISeriesApi, ColorType, AreaSeries } from "lightweight-charts";
 import { useTheme } from "@mui/material/styles";
 
 const PERIODS = [
-  { label: "24ч", days: 1 },
-  { label: "7д", days: 7 },
-  { label: "14д", days: 14 },
-  { label: "30д", days: 30 },
-  { label: "90д", days: 90 },
-  { label: "1г", days: 365 },
+  { label: "10м", minutes: 10 },
+  { label: "30м", minutes: 30 },
+  { label: "1ч", minutes: 60 },
+  { label: "6ч", minutes: 360 },
+  { label: "24ч", minutes: 1440 },
+  { label: "3д", minutes: 4320 },
+  { label: "7д", minutes: 10080 },
 ];
 
 function PriceChart({ coinId }: { coinId: string }) {
   const muiTheme = useTheme();
-  const [days, setDays] = useState(7);
-  const [chartType, setChartType] = useState<"line" | "candle">("line");
+  const [periodIdx, setPeriodIdx] = useState(4); // 24ч по умолчанию
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -81,63 +81,40 @@ function PriceChart({ coinId }: { coinId: string }) {
     };
   }, [muiTheme]);
 
-  // Загрузка данных графика
+  // Загрузка данных графика из наших снапшотов
   useEffect(() => {
     if (!chartRef.current) return;
 
-    const chart = chartRef.current;
     if (seriesRef.current) {
-      chart.removeSeries(seriesRef.current);
+      chartRef.current.removeSeries(seriesRef.current);
       seriesRef.current = null;
     }
 
-    const upColor = muiTheme.palette.success.main;
-    const downColor = muiTheme.palette.error.main;
+    const minutes = PERIODS[periodIdx].minutes;
 
-    if (chartType === "candle") {
-      api.getCoinOhlc(coinId, days).then((ohlcData) => {
-        if (!chartRef.current) return;
-        const series = chartRef.current.addSeries(CandlestickSeries, {
-          upColor, downColor,
-          borderUpColor: upColor, borderDownColor: downColor,
-          wickUpColor: upColor, wickDownColor: downColor,
-        });
-        series.setData(ohlcData.map((d: number[]) => ({
-          time: Math.floor(d[0] / 1000) as any,
-          open: d[1], high: d[2], low: d[3], close: d[4],
-        })));
-        seriesRef.current = series;
-        chartRef.current.timeScale().fitContent();
-      }).catch(() => {});
-    } else {
-      api.getCoinChart(coinId, days).then((chartData) => {
-        if (!chartRef.current) return;
-        const series = chartRef.current.addSeries(AreaSeries, {
-          lineColor: muiTheme.palette.primary.main,
-          topColor: muiTheme.palette.primary.main + "40",
-          bottomColor: muiTheme.palette.primary.main + "05",
-          lineWidth: 2,
-        });
-        series.setData(chartData.prices.map((p: number[]) => ({
-          time: Math.floor(p[0] / 1000) as any,
-          value: p[1],
-        })));
-        seriesRef.current = series;
-        chartRef.current.timeScale().fitContent();
-      }).catch(() => {});
-    }
-  }, [coinId, days, chartType, muiTheme]);
+    api.getCoinSnapshots(coinId, minutes).then((res) => {
+      if (!chartRef.current || res.data.length === 0) return;
+      const series = chartRef.current.addSeries(AreaSeries, {
+        lineColor: muiTheme.palette.primary.main,
+        topColor: muiTheme.palette.primary.main + "40",
+        bottomColor: muiTheme.palette.primary.main + "05",
+        lineWidth: 2,
+      });
+      series.setData(res.data.map((s) => ({
+        time: Math.floor(new Date(s.recordedAt).getTime() / 1000) as any,
+        value: s.price,
+      })));
+      seriesRef.current = series;
+      chartRef.current.timeScale().fitContent();
+    }).catch(() => {});
+  }, [coinId, periodIdx, muiTheme]);
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1} sx={{ mb: 1 }}>
-        <ToggleButtonGroup value={chartType} exclusive onChange={(_, v) => v && setChartType(v)} size="small">
-          <ToggleButton value="line">Линия</ToggleButton>
-          <ToggleButton value="candle">Свечи</ToggleButton>
-        </ToggleButtonGroup>
-        <ToggleButtonGroup value={days} exclusive onChange={(_, v) => v && setDays(v)} size="small">
-          {PERIODS.map((p) => (
-            <ToggleButton key={p.days} value={p.days}>{p.label}</ToggleButton>
+      <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
+        <ToggleButtonGroup value={periodIdx} exclusive onChange={(_, v) => v !== null && setPeriodIdx(v)} size="small">
+          {PERIODS.map((p, i) => (
+            <ToggleButton key={i} value={i}>{p.label}</ToggleButton>
           ))}
         </ToggleButtonGroup>
       </Stack>

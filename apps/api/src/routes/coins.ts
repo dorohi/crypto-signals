@@ -4,29 +4,8 @@ import { requireAuth } from "../auth.js";
 
 export const coinsRouter = Router();
 
-// Простой in-memory кеш
-const cache = new Map<string, { data: any; expiresAt: number }>();
-
-async function cachedFetch(url: string, ttlSeconds: number): Promise<any> {
-  const cached = cache.get(url);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.data;
-  }
-
-  const response = await fetch(url);
-  if (response.status === 429) {
-    // Если rate limited и есть старый кеш — вернуть его
-    if (cached) return cached.data;
-    throw new Error("429");
-  }
-  if (!response.ok) {
-    throw new Error(`${response.status}`);
-  }
-
-  const data = await response.json();
-  cache.set(url, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
-  return data;
-}
+// Кеш для деталей монет (1 час)
+const detailsCache = new Map<string, { data: any; expiresAt: number }>();
 
 coinsRouter.get("/", requireAuth, async (req, res) => {
   const page = parseInt((req.query.page as string) || "1");
@@ -67,46 +46,59 @@ coinsRouter.get("/search", requireAuth, async (req, res) => {
   res.json({ data: coins });
 });
 
-// Детальная информация о монете (кеш 5 мин)
+// Снапшоты из нашей БД (для графиков)
+coinsRouter.get("/:id/snapshots", requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const minutes = parseInt((req.query.minutes as string) || "60");
+  const since = new Date(Date.now() - minutes * 60 * 1000);
+
+  const snapshots = await prisma.priceSnapshot.findMany({
+    where: { coinId: id, recordedAt: { gte: since } },
+    orderBy: { recordedAt: "asc" },
+    select: { price: true, recordedAt: true },
+  });
+
+  res.json({ data: snapshots });
+});
+
+// Детальная информация о монете (кеш 1 час)
 coinsRouter.get("/:id/details", requireAuth, async (req, res) => {
   const { id } = req.params;
-  try {
-    const data = await cachedFetch(
-      `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&community_data=true&developer_data=false`,
-      300
-    );
-    res.json(data);
-  } catch (error: any) {
-    res.status(error.message === "429" ? 429 : 500).json({ error: `CoinGecko: ${error.message}` });
-  }
-});
 
-// История цен для графика (кеш 2 мин)
-coinsRouter.get("/:id/chart", requireAuth, async (req, res) => {
-  const { id } = req.params;
-  const days = req.query.days || "7";
-  try {
-    const data = await cachedFetch(
-      `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`,
-      120
-    );
-    res.json(data);
-  } catch (error: any) {
-    res.status(error.message === "429" ? 429 : 500).json({ error: `CoinGecko: ${error.message}` });
+  const cached = detailsCache.get(id);
+  if (cached && cached.expiresAt > Date.now()) {
+    res.json(cached.data);
+    return;
   }
-});
 
-// OHLC свечи (кеш 2 мин)
-coinsRouter.get("/:id/ohlc", requireAuth, async (req, res) => {
-  const { id } = req.params;
-  const days = req.query.days || "7";
   try {
-    const data = await cachedFetch(
-      `https://api.coingecko.com/api/v3/coins/${id}/ohlc?vs_currency=usd&days=${days}`,
-      120
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&community_data=true&developer_data=false`
     );
+
+    if (response.status === 429) {
+      // Rate limited — вернуть старый кеш если есть
+      if (cached) {
+        res.json(cached.data);
+        return;
+      }
+      res.status(429).json({ error: "Слишком много запросов, попробуйте позже" });
+      return;
+    }
+
+    if (!response.ok) {
+      res.status(response.status).json({ error: `CoinGecko: ${response.status}` });
+      return;
+    }
+
+    const data = await response.json();
+    detailsCache.set(id, { data, expiresAt: Date.now() + 3600_000 }); // 1 час
     res.json(data);
-  } catch (error: any) {
-    res.status(error.message === "429" ? 429 : 500).json({ error: `CoinGecko: ${error.message}` });
+  } catch (error) {
+    if (cached) {
+      res.json(cached.data);
+      return;
+    }
+    res.status(500).json({ error: "Ошибка получения данных монеты" });
   }
 });
