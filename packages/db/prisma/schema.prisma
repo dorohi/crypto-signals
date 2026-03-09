@@ -21,6 +21,7 @@ model User {
   telegramLinkExpiresAt DateTime?
   watchlistItems        WatchlistItem[]
   alerts                Alert[]
+  portfolioTransactions PortfolioTransaction[]
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 }
@@ -34,9 +35,10 @@ model Coin {
   marketCap      Float?
   marketCapRank  Int?
   priceUpdatedAt DateTime?
-  watchlistItems WatchlistItem[]
-  priceHistory   PriceSnapshot[]
-  alerts         Alert[]
+  watchlistItems        WatchlistItem[]
+  priceHistory          PriceSnapshot[]
+  alerts                Alert[]
+  portfolioTransactions PortfolioTransaction[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -84,5 +86,23 @@ model Alert {
   createdAt     DateTime @default(now())
 
   @@index([userId, createdAt])
+  @@index([coinId])
+}
+
+model PortfolioTransaction {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  coin      Coin     @relation(fields: [coinId], references: [id], onDelete: Cascade)
+  coinId    String
+  type      String   // "buy" | "sell"
+  quantity  Float
+  price     Float
+  fee       Float    @default(0)
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([userId])
   @@index([coinId])
 }

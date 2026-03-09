@@ -31,7 +31,8 @@ coinsRouter.get("/search", requireAuth, async (req, res) => {
     return;
   }
 
-  const coins = await prisma.coin.findMany({
+  // Сначала ищем в нашей БД
+  const local = await prisma.coin.findMany({
     where: {
       OR: [
         { name: { contains: query } },
@@ -43,7 +44,38 @@ coinsRouter.get("/search", requireAuth, async (req, res) => {
     take: 20,
   });
 
-  res.json({ data: coins });
+  // Если нашли достаточно — отдаём
+  if (local.length >= 5) {
+    res.json({ data: local });
+    return;
+  }
+
+  // Иначе дополняем из CoinGecko
+  try {
+    const cgRes = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`);
+    if (cgRes.ok) {
+      const cgData = await cgRes.json();
+      const cgCoins = (cgData.coins || []).slice(0, 10);
+
+      const localIds = new Set(local.map((c) => c.id));
+      const extra = cgCoins
+        .filter((c: any) => !localIds.has(c.id))
+        .map((c: any) => ({
+          id: c.id,
+          symbol: c.symbol,
+          name: c.name,
+          image: c.large || c.thumb || null,
+          currentPrice: null,
+          marketCap: null,
+          marketCapRank: c.market_cap_rank || null,
+        }));
+
+      res.json({ data: [...local, ...extra] });
+      return;
+    }
+  } catch { /* fallback to local */ }
+
+  res.json({ data: local });
 });
 
 // Снапшоты из нашей БД (для графиков)

@@ -33,12 +33,14 @@ import DarkModeIcon from "@mui/icons-material/DarkMode";
 import TerminalIcon from "@mui/icons-material/Terminal";
 import CheckIcon from "@mui/icons-material/Check";
 import PestControlIcon from "@mui/icons-material/PestControl";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 
 const DRAWER_WIDTH = 240;
 const DRAWER_WIDTH_COLLAPSED = 65;
 
 const mainNavItems = [
   { href: "/watchlist", label: "Список наблюдения", icon: <ListAltIcon /> },
+  { href: "/portfolio", label: "Портфель", icon: <AccountBalanceWalletIcon /> },
   { href: "/alerts", label: "Оповещения", icon: <NotificationsIcon /> },
 ];
 

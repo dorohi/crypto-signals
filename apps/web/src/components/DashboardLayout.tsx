@@ -8,14 +8,15 @@ import { Navbar } from "@/components/Navbar";
 export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { watchlistStore, alertStore, settingsStore } = useStore();
+  const { watchlistStore, alertStore, settingsStore, portfolioStore } = useStore();
 
   // Предзагрузка всех данных при входе в дашборд
   useEffect(() => {
     watchlistStore.fetchWatchlist();
     alertStore.fetchAlerts();
     settingsStore.fetchSettings();
-  }, [watchlistStore, alertStore, settingsStore]);
+    portfolioStore.fetchPortfolio();
+  }, [watchlistStore, alertStore, settingsStore, portfolioStore]);
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>

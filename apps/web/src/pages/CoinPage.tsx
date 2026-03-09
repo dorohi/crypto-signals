@@ -264,7 +264,7 @@ const CoinPage = observer(function CoinPage() {
       </Stack>
 
       {/* Сообщество */}
-      {(details.community_data?.twitter_followers || details.community_data?.reddit_subscribers) && (
+      {(details.community_data?.twitter_followers > 0 || details.community_data?.reddit_subscribers > 0) && (
         <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5 }}>Сообщество</Typography>
           {details.community_data.twitter_followers > 0 && (

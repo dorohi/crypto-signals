@@ -6,6 +6,7 @@ import { watchlistRouter } from "./routes/watchlist.js";
 import { alertsRouter } from "./routes/alerts.js";
 import { settingsRouter } from "./routes/settings.js";
 import { telegramRouter } from "./routes/telegram.js";
+import { portfolioRouter } from "./routes/portfolio.js";
 
 const app = express();
 const PORT = parseInt(process.env.API_PORT || "3002");
@@ -19,6 +20,7 @@ app.use("/api/watchlist", watchlistRouter);
 app.use("/api/alerts", alertsRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/telegram", telegramRouter);
+app.use("/api/portfolio", portfolioRouter);
 
 app.listen(PORT, () => {
   console.log(`API сервер запущен на порту ${PORT}`);

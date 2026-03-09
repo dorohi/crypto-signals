@@ -127,6 +127,41 @@ class ApiClient {
     });
   }
 
+  // Portfolio
+  getPortfolio() {
+    return this.request<{ summary: any; positions: any[] }>("/portfolio");
+  }
+
+  getPortfolioTransactions(coinId: string) {
+    return this.request<{ data: any[] }>(`/portfolio/${coinId}/transactions`);
+  }
+
+  addPortfolioTransaction(data: { coinId: string; type: string; quantity: number; price: number; fee?: number; note?: string; date?: string }) {
+    return this.request<any>("/portfolio", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  updatePortfolioTransaction(id: string, data: { type?: string; quantity?: number; price?: number; fee?: number; note?: string; date?: string }) {
+    return this.request<any>(`/portfolio/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  deletePortfolioTransaction(id: string) {
+    return this.request<any>(`/portfolio/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  deletePortfolioCoin(coinId: string) {
+    return this.request<any>(`/portfolio/coin/${coinId}`, {
+      method: "DELETE",
+    });
+  }
+
   // Telegram
   generateTelegramCode() {
     return this.request<{ code: string; expiresAt: string }>(

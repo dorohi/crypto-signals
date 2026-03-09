@@ -29,10 +29,34 @@ watchlistRouter.post("/", async (req, res) => {
       return;
     }
 
-    const coin = await prisma.coin.findUnique({ where: { id: coinId } });
+    let coin = await prisma.coin.findUnique({ where: { id: coinId } });
     if (!coin) {
-      res.status(404).json({ error: "Монета не найдена" });
-      return;
+      // Монеты нет в БД — попробуем получить из CoinGecko и создать
+      try {
+        const cgRes = await fetch(
+          `https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`
+        );
+        if (!cgRes.ok) {
+          res.status(404).json({ error: "Монета не найдена" });
+          return;
+        }
+        const cgData = await cgRes.json();
+        coin = await prisma.coin.create({
+          data: {
+            id: cgData.id,
+            symbol: cgData.symbol,
+            name: cgData.name,
+            image: cgData.image?.large || cgData.image?.small || null,
+            currentPrice: cgData.market_data?.current_price?.usd || null,
+            marketCap: cgData.market_data?.market_cap?.usd || null,
+            marketCapRank: cgData.market_data?.market_cap_rank || null,
+            priceUpdatedAt: new Date(),
+          },
+        });
+      } catch {
+        res.status(404).json({ error: "Монета не найдена" });
+        return;
+      }
     }
 
     const existing = await prisma.watchlistItem.findUnique({
