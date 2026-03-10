@@ -80,17 +80,48 @@ coinsRouter.get("/search", requireAuth, async (req, res) => {
 
 // Снапшоты из нашей БД (для графиков)
 coinsRouter.get("/:id/snapshots", requireAuth, async (req, res) => {
-  const { id } = req.params;
-  const minutes = parseInt((req.query.minutes as string) || "60");
-  const since = new Date(Date.now() - minutes * 60 * 1000);
+  const id = req.params.id as string;
+  const minutesParam = req.query.minutes as string | undefined;
+  const minutes = minutesParam ? parseInt(minutesParam) : undefined;
+
+  const where: any = { coinId: id };
+  if (minutes) {
+    where.recordedAt = { gte: new Date(Date.now() - minutes * 60 * 1000) };
+  }
 
   const snapshots = await prisma.priceSnapshot.findMany({
-    where: { coinId: id, recordedAt: { gte: since } },
+    where,
     orderBy: { recordedAt: "asc" },
     select: { price: true, recordedAt: true },
   });
 
   res.json({ data: snapshots });
+});
+
+// Спарклайны для списка монет (batch)
+coinsRouter.post("/sparklines", requireAuth, async (req, res) => {
+  const { coinIds, minutes = 60 } = req.body;
+  if (!Array.isArray(coinIds) || coinIds.length === 0) {
+    res.json({ data: {} });
+    return;
+  }
+
+  const since = new Date(Date.now() - minutes * 60 * 1000);
+
+  const snapshots = await prisma.priceSnapshot.findMany({
+    where: { coinId: { in: coinIds }, recordedAt: { gte: since } },
+    orderBy: { recordedAt: "asc" },
+    select: { coinId: true, price: true },
+  });
+
+  // Группируем по coinId, оставляем только массив цен
+  const result: Record<string, number[]> = {};
+  for (const s of snapshots) {
+    if (!result[s.coinId]) result[s.coinId] = [];
+    result[s.coinId].push(s.price);
+  }
+
+  res.json({ data: result });
 });
 
 // Детальная информация о монете (кеш 1 час)

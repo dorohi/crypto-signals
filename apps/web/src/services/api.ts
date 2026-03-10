@@ -73,10 +73,18 @@ class ApiClient {
     );
   }
 
-  getCoinSnapshots(id: string, minutes = 60) {
+  getCoinSnapshots(id: string, minutes?: number) {
+    const qs = minutes ? `?minutes=${minutes}` : "";
     return this.request<{ data: { price: number; recordedAt: string }[] }>(
-      `/coins/${id}/snapshots?minutes=${minutes}`
+      `/coins/${id}/snapshots${qs}`
     );
+  }
+
+  getSparklines(coinIds: string[], minutes = 60) {
+    return this.request<{ data: Record<string, number[]> }>("/coins/sparklines", {
+      method: "POST",
+      body: JSON.stringify({ coinIds, minutes }),
+    });
   }
 
   getCoinDetails(id: string) {

@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useStore } from "@/stores/RootStore";
 import { CoinSearch } from "@/components/CoinSearch";
+import { Sparkline } from "@/components/Sparkline";
+import { api } from "@/services/api";
+import { useMediaQuery, useTheme } from "@mui/material";
 import {
   Box,
   Typography,
@@ -40,6 +43,19 @@ import TuneIcon from "@mui/icons-material/Tune";
 const WatchlistPage = observer(function WatchlistPage() {
   const { watchlistStore, settingsStore } = useStore();
   const navigate = useNavigate();
+  const muiTheme = useTheme();
+  const isDesktop = useMediaQuery(muiTheme.breakpoints.up("md"));
+
+  // Спарклайны (только десктоп)
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
+
+  useEffect(() => {
+    if (!isDesktop || !watchlistStore.initialized || watchlistStore.items.length === 0) return;
+    const coinIds = watchlistStore.items.map((i: any) => i.coinId);
+    api.getSparklines(coinIds, 60).then((res) => {
+      setSparklines(res.data);
+    }).catch(() => {});
+  }, [isDesktop, watchlistStore.initialized, watchlistStore.items.length]);
 
   // Меню
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
@@ -145,6 +161,7 @@ const WatchlistPage = observer(function WatchlistPage() {
                   <TableCell sx={{ width: 50 }}>#</TableCell>
                   <TableCell>Монета</TableCell>
                   <TableCell align="right">Цена</TableCell>
+                  {isDesktop && <TableCell align="center" sx={{ width: 96 }}>1ч</TableCell>}
                   <TableCell align="right" sx={{ display: { xs: "none", md: "table-cell" } }}>Капитализация</TableCell>
                   <TableCell align="right">Порог / Период</TableCell>
                   <TableCell align="center" sx={{ width: 50 }}></TableCell>
@@ -168,6 +185,13 @@ const WatchlistPage = observer(function WatchlistPage() {
                       </Stack>
                     </TableCell>
                     <TableCell align="right">{formatPrice(item.coin.currentPrice)}</TableCell>
+                    {isDesktop && (
+                      <TableCell align="center">
+                        {sparklines[item.coinId] ? (
+                          <Sparkline data={sparklines[item.coinId]} />
+                        ) : null}
+                      </TableCell>
+                    )}
                     <TableCell align="right" sx={{ color: "text.secondary", display: { xs: "none", md: "table-cell" } }}>
                       {item.coin.marketCap ? `$${(item.coin.marketCap / 1e9).toFixed(1)} млрд` : "Н/Д"}
                     </TableCell>
@@ -196,7 +220,7 @@ const WatchlistPage = observer(function WatchlistPage() {
                 ))}
                 {allItems.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={isDesktop ? 7 : 6} align="center" sx={{ py: 6 }}>
                       <Typography color="text.secondary">
                         В вашем списке нет монет. Используйте поиск выше, чтобы добавить.
                       </Typography>

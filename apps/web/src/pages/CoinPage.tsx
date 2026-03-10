@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { api } from "@/services/api";
@@ -21,22 +21,21 @@ import { createChart, type IChartApi, type ISeriesApi, ColorType, AreaSeries } f
 import { useTheme } from "@mui/material/styles";
 
 const PERIODS = [
-  { label: "10м", minutes: 10 },
-  { label: "30м", minutes: 30 },
   { label: "1ч", minutes: 60 },
   { label: "6ч", minutes: 360 },
   { label: "24ч", minutes: 1440 },
   { label: "3д", minutes: 4320 },
   { label: "7д", minutes: 10080 },
+  { label: "Всё", minutes: 0 },
 ];
 
 function PriceChart({ coinId }: { coinId: string }) {
   const muiTheme = useTheme();
-  const [periodIdx, setPeriodIdx] = useState(4); // 24ч по умолчанию
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
+  const allDataRef = useRef<{ time: number; value: number }[]>([]);
 
   // Создание графика
   useEffect(() => {
@@ -81,40 +80,58 @@ function PriceChart({ coinId }: { coinId: string }) {
     };
   }, [muiTheme]);
 
-  // Загрузка данных графика из наших снапшотов
+  // Загрузка ВСЕХ данных один раз
   useEffect(() => {
     if (!chartRef.current) return;
 
-    if (seriesRef.current) {
-      chartRef.current.removeSeries(seriesRef.current);
-      seriesRef.current = null;
-    }
-
-    const minutes = PERIODS[periodIdx].minutes;
-
-    api.getCoinSnapshots(coinId, minutes).then((res) => {
+    api.getCoinSnapshots(coinId).then((res) => {
       if (!chartRef.current || res.data.length === 0) return;
-      const series = chartRef.current.addSeries(AreaSeries, {
+
+      const mapped = res.data.map((s) => ({
+        time: Math.floor(new Date(s.recordedAt).getTime() / 1000) as any,
+        value: s.price,
+      }));
+      allDataRef.current = mapped;
+
+      if (seriesRef.current) {
+        chartRef.current!.removeSeries(seriesRef.current);
+      }
+
+      const series = chartRef.current!.addSeries(AreaSeries, {
         lineColor: muiTheme.palette.primary.main,
         topColor: muiTheme.palette.primary.main + "40",
         bottomColor: muiTheme.palette.primary.main + "05",
         lineWidth: 2,
       });
-      series.setData(res.data.map((s) => ({
-        time: Math.floor(new Date(s.recordedAt).getTime() / 1000) as any,
-        value: s.price,
-      })));
+      series.setData(mapped);
       seriesRef.current = series;
-      chartRef.current.timeScale().fitContent();
+      // Показать последние 24ч по умолчанию
+      zoomTo(1440);
     }).catch(() => {});
-  }, [coinId, periodIdx, muiTheme]);
+  }, [coinId, muiTheme]);
+
+  const zoomTo = (minutes: number) => {
+    if (!chartRef.current || allDataRef.current.length === 0) return;
+    if (minutes === 0) {
+      chartRef.current.timeScale().fitContent();
+      return;
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const from = now - minutes * 60;
+    chartRef.current.timeScale().setVisibleRange({
+      from: from as any,
+      to: now as any,
+    });
+  };
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
       <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
-        <ToggleButtonGroup value={periodIdx} exclusive onChange={(_, v) => v !== null && setPeriodIdx(v)} size="small">
-          {PERIODS.map((p, i) => (
-            <ToggleButton key={i} value={i}>{p.label}</ToggleButton>
+        <ToggleButtonGroup size="small" exclusive>
+          {PERIODS.map((p) => (
+            <ToggleButton key={p.label} value={p.minutes} onClick={() => zoomTo(p.minutes)}>
+              {p.label}
+            </ToggleButton>
           ))}
         </ToggleButtonGroup>
       </Stack>
