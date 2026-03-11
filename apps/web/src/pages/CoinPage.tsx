@@ -97,11 +97,23 @@ function PriceChart({ coinId }: { coinId: string }) {
         chartRef.current!.removeSeries(seriesRef.current);
       }
 
+      // Определяем точность по минимальной цене
+      const minVal = Math.min(...mapped.map((d) => d.value));
+      let precision = 2;
+      if (minVal > 0 && minVal < 1) {
+        precision = Math.max(2, Math.ceil(-Math.log10(minVal)) + 2);
+      }
+
       const series = chartRef.current!.addSeries(AreaSeries, {
         lineColor: muiTheme.palette.primary.main,
         topColor: muiTheme.palette.primary.main + "40",
         bottomColor: muiTheme.palette.primary.main + "05",
         lineWidth: 2,
+        priceFormat: {
+          type: "price",
+          precision,
+          minMove: 1 / Math.pow(10, precision),
+        },
       });
       series.setData(mapped);
       seriesRef.current = series;
