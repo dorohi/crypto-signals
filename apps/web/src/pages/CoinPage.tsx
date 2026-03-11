@@ -26,7 +26,6 @@ const PERIODS = [
   { label: "24ч", minutes: 1440 },
   { label: "3д", minutes: 4320 },
   { label: "7д", minutes: 10080 },
-  { label: "Всё", minutes: 0 },
 ];
 
 function PriceChart({ coinId }: { coinId: string }) {
@@ -124,15 +123,13 @@ function PriceChart({ coinId }: { coinId: string }) {
 
   const zoomTo = (minutes: number) => {
     if (!chartRef.current || allDataRef.current.length === 0) return;
-    if (minutes === 0) {
-      chartRef.current.timeScale().fitContent();
-      return;
-    }
-    const now = Math.floor(Date.now() / 1000);
-    const from = now - minutes * 60;
-    chartRef.current.timeScale().setVisibleRange({
-      from: from as any,
-      to: now as any,
+    const data = allDataRef.current;
+    const lastTime = data[data.length - 1].time;
+    const fromTime = lastTime - minutes * 60;
+    const fromIdx = data.findIndex((d) => d.time >= fromTime);
+    chartRef.current.timeScale().setVisibleLogicalRange({
+      from: fromIdx >= 0 ? fromIdx : 0,
+      to: data.length - 1,
     });
   };
 

@@ -544,7 +544,7 @@ const PortfolioPage = observer(function PortfolioPage() {
       {/* Диалог истории транзакций */}
       <Dialog open={historyDialog} onClose={() => setHistoryDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle>Транзакции — {historyCoinName}</DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ p: 1 }}>
           {historyLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
               <CircularProgress size={28} />
@@ -553,7 +553,7 @@ const PortfolioPage = observer(function PortfolioPage() {
             <Typography color="text.secondary" sx={{ py: 2 }}>Нет транзакций</Typography>
           ) : (
             <TableContainer>
-              <Table size="small">
+              <Table size="small" sx={{ '& .MuiTableCell-root': { px: 1, py: '3px' } }}>
                 <TableHead>
                   <TableRow>
                     <TableCell>Тип</TableCell>
