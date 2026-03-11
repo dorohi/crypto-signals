@@ -29,7 +29,6 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Fab,
   Tooltip,
   List,
   ListItem,
@@ -388,17 +387,6 @@ const PortfolioPage = observer(function PortfolioPage() {
         </>
       )}
 
-      {/* FAB мобильный */}
-      {isMobile && (
-        <Fab
-          color="primary"
-          sx={{ position: "fixed", bottom: 24, right: 24 }}
-          onClick={() => openTxDialog()}
-        >
-          <AddIcon />
-        </Fab>
-      )}
-
       {/* Меню действий */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>
         <MenuItem onClick={handleAddTxFromMenu}>
@@ -416,7 +404,7 @@ const PortfolioPage = observer(function PortfolioPage() {
       </Menu>
 
       {/* Диалог добавления транзакции */}
-      <Dialog open={txDialog} onClose={() => setTxDialog(false)} maxWidth="xs" fullWidth>
+      <Dialog open={txDialog} onClose={() => setTxDialog(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
         <DialogTitle>{txEditId ? "Редактировать транзакцию" : "Добавить транзакцию"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
