@@ -109,6 +109,10 @@ const PortfolioPage = observer(function PortfolioPage() {
   // Диалог удаления
   const [deleteDialog, setDeleteDialog] = useState(false);
 
+  // Меню транзакции
+  const [txMenuAnchor, setTxMenuAnchor] = useState<null | HTMLElement>(null);
+  const [txMenuTarget, setTxMenuTarget] = useState<any>(null);
+
   // Диалог транзакций по монете
   const [historyDialog, setHistoryDialog] = useState(false);
   const [historyTransactions, setHistoryTransactions] = useState<any[]>([]);
@@ -538,7 +542,7 @@ const PortfolioPage = observer(function PortfolioPage() {
       </Dialog>
 
       {/* Диалог истории транзакций */}
-      <Dialog open={historyDialog} onClose={() => setHistoryDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={historyDialog} onClose={() => setHistoryDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle>Транзакции — {historyCoinName}</DialogTitle>
         <DialogContent>
           {historyLoading ? (
@@ -557,19 +561,20 @@ const PortfolioPage = observer(function PortfolioPage() {
                     <TableCell align="right">Цена</TableCell>
                     <TableCell align="right">Сумма</TableCell>
                     <TableCell>Дата</TableCell>
-                    <TableCell align="center" sx={{ width: 80 }}></TableCell>
+                    <TableCell align="center" sx={{ width: 50 }}></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {historyTransactions.map((tx: any) => (
                     <TableRow key={tx.id} hover>
                       <TableCell>
-                        <Chip
-                          label={tx.type === "buy" ? "Покупка" : "Продажа"}
-                          size="small"
-                          color={tx.type === "buy" ? "success" : "error"}
-                          variant="outlined"
-                        />
+                        <Tooltip title={tx.type === "buy" ? "Покупка" : "Продажа"}>
+                          {tx.type === "buy" ? (
+                            <TrendingUpIcon fontSize="small" color="success" />
+                          ) : (
+                            <TrendingDownIcon fontSize="small" color="error" />
+                          )}
+                        </Tooltip>
                       </TableCell>
                       <TableCell align="right">
                         {parseFloat(tx.quantity).toLocaleString("ru-RU", { maximumFractionDigits: 8 })}
@@ -590,18 +595,9 @@ const PortfolioPage = observer(function PortfolioPage() {
                         )}
                       </TableCell>
                       <TableCell align="center">
-                        <Stack direction="row" spacing={0}>
-                          <Tooltip title="Редактировать">
-                            <IconButton size="small" onClick={() => openTxDialog(tx.coinId, historyCoinName, tx)}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Удалить">
-                            <IconButton size="small" onClick={() => handleDeleteTx(tx.id)} color="error">
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
+                        <IconButton size="small" onClick={(e) => { setTxMenuAnchor(e.currentTarget); setTxMenuTarget(tx); }}>
+                          <MoreVertIcon fontSize="small" />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -614,6 +610,18 @@ const PortfolioPage = observer(function PortfolioPage() {
           <Button onClick={() => setHistoryDialog(false)}>Закрыть</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Меню действий транзакции */}
+      <Menu anchorEl={txMenuAnchor} open={Boolean(txMenuAnchor)} onClose={() => setTxMenuAnchor(null)}>
+        <MenuItem onClick={() => { if (txMenuTarget) openTxDialog(txMenuTarget.coinId, historyCoinName, txMenuTarget); setTxMenuAnchor(null); }}>
+          <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Редактировать</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if (txMenuTarget) handleDeleteTx(txMenuTarget.id); setTxMenuAnchor(null); }} sx={{ color: "error.main" }}>
+          <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
+          <ListItemText>Удалить</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {/* Диалог подтверждения удаления */}
       <Dialog open={deleteDialog} onClose={() => { setDeleteDialog(false); setMenuPosition(null); }}>

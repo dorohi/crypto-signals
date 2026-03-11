@@ -31,7 +31,7 @@ export function DashboardLayout() {
       />
       <Box component="main" sx={{ flexGrow: 1, minWidth: 0, pt: 2, pb: 2 }}>
         <Toolbar />
-        <Container maxWidth={false} sx={{ px: { xs: 2, md: 3 } }}>
+        <Container maxWidth={false} sx={{ px: { xs: 1, md: 3 } }}>
           <Outlet />
         </Container>
       </Box>
