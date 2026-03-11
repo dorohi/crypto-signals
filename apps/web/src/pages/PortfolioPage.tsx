@@ -264,20 +264,20 @@ const PortfolioPage = observer(function PortfolioPage() {
         <>
           {/* Сводка портфеля */}
           {summary && positions.length > 0 && (
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
-              <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr 1fr 1fr 1fr" }, gap: 2, mb: 3 }}>
+              <Paper variant="outlined" sx={{ p: 2 }}>
                 <Typography variant="caption" color="text.secondary">Общая стоимость</Typography>
                 <Typography variant="h6" fontWeight="bold">{formatUsd(summary.totalValue)}</Typography>
               </Paper>
-              <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
+              <Paper variant="outlined" sx={{ p: 2 }}>
                 <Typography variant="caption" color="text.secondary">Вложено</Typography>
                 <Typography variant="h6" fontWeight="bold">{formatUsd(summary.totalInvested)}</Typography>
               </Paper>
-              <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
+              <Paper variant="outlined" sx={{ p: 2 }}>
                 <Typography variant="caption" color="text.secondary">Прибыль / Убыток</Typography>
                 <PnlText value={summary.totalPnl} percent={summary.totalPnlPercent} size="h6" />
               </Paper>
-              <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
+              <Paper variant="outlined" sx={{ p: 2 }}>
                 <Typography variant="caption" color="text.secondary">Лучший / Худший</Typography>
                 {summary.best && (
                   <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -299,7 +299,7 @@ const PortfolioPage = observer(function PortfolioPage() {
                   <Typography variant="body2" color="text.secondary">Н/Д</Typography>
                 )}
               </Paper>
-            </Stack>
+            </Box>
           )}
 
           {/* Таблица позиций */}
