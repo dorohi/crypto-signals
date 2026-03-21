@@ -12,6 +12,7 @@ model User {
   email                 String          @unique
   passwordHash          String
   name                  String
+  isAdmin               Boolean         @default(false)
   defaultThreshold      Float           @default(10.0)
   alertOnUp             Boolean         @default(true)
   alertOnDown           Boolean         @default(true)

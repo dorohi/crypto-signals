@@ -25,7 +25,7 @@ authRouter.post("/login", async (req, res) => {
       return;
     }
 
-    const token = signToken({ userId: user.id, email: user.email });
+    const token = signToken({ userId: user.id, email: user.email, isAdmin: user.isAdmin });
 
     res.json({
       token,
@@ -33,6 +33,7 @@ authRouter.post("/login", async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        isAdmin: user.isAdmin,
         defaultThreshold: user.defaultThreshold,
         telegramChatId: user.telegramChatId,
         createdAt: user.createdAt.toISOString(),
@@ -81,7 +82,7 @@ authRouter.post("/register", async (req, res) => {
       });
     }
 
-    const token = signToken({ userId: user.id, email: user.email });
+    const token = signToken({ userId: user.id, email: user.email, isAdmin: false });
 
     res.json({
       token,
@@ -89,6 +90,7 @@ authRouter.post("/register", async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        isAdmin: false,
         defaultThreshold: user.defaultThreshold,
         telegramChatId: user.telegramChatId,
         createdAt: user.createdAt.toISOString(),
@@ -109,6 +111,7 @@ authRouter.get("/me", requireAuth, async (req, res) => {
       id: true,
       email: true,
       name: true,
+      isAdmin: true,
       defaultThreshold: true,
       telegramChatId: true,
       createdAt: true,

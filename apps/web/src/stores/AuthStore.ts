@@ -16,6 +16,10 @@ export class AuthStore {
     return !!this.token;
   }
 
+  get isAdmin(): boolean {
+    return !!this.user?.isAdmin;
+  }
+
   loadFromStorage() {
     if (typeof window === "undefined") return;
     const token = localStorage.getItem("token");

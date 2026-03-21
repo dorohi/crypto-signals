@@ -11,6 +11,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import TelegramPage from "@/pages/TelegramPage";
 import CoinPage from "@/pages/CoinPage";
 import PortfolioPage from "@/pages/PortfolioPage";
+import AdminPage from "@/pages/AdminPage";
 
 export const App = observer(function App() {
   const { authStore } = useStore();
@@ -32,6 +33,7 @@ export const App = observer(function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/telegram" element={<TelegramPage />} />
         <Route path="/coin/:id" element={<CoinPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route
         path="*"

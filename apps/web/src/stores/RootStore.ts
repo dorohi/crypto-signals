@@ -7,6 +7,7 @@ import { SettingsStore } from "./SettingsStore";
 import { TelegramStore } from "./TelegramStore";
 import { ThemeStore } from "./ThemeStore";
 import { PortfolioStore } from "./PortfolioStore";
+import { AdminStore } from "./AdminStore";
 
 export class RootStore {
   authStore: AuthStore;
@@ -17,6 +18,7 @@ export class RootStore {
   telegramStore: TelegramStore;
   themeStore: ThemeStore;
   portfolioStore: PortfolioStore;
+  adminStore: AdminStore;
 
   constructor() {
     this.authStore = new AuthStore();
@@ -27,6 +29,7 @@ export class RootStore {
     this.telegramStore = new TelegramStore(this);
     this.themeStore = new ThemeStore();
     this.portfolioStore = new PortfolioStore();
+    this.adminStore = new AdminStore();
   }
 }
 

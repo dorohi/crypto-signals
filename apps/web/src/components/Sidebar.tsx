@@ -34,6 +34,7 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import CheckIcon from "@mui/icons-material/Check";
 import PestControlIcon from "@mui/icons-material/PestControl";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
 const DRAWER_WIDTH = 240;
 const DRAWER_WIDTH_COLLAPSED = 65;
@@ -112,6 +113,7 @@ export const Sidebar = observer(function Sidebar({ open, mobileOpen, onMobileClo
       {/* Основная навигация */}
       <List sx={{ flexGrow: 1 }} disablePadding>
         {mainNavItems.map(renderNavItem)}
+        {authStore.isAdmin && renderNavItem({ href: "/admin", label: "Админ-панель", icon: <AdminPanelSettingsIcon /> })}
       </List>
 
       <Divider />

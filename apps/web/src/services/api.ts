@@ -183,6 +183,24 @@ class ApiClient {
       method: "POST",
     });
   }
+  // Admin
+  getAdminUsers() {
+    return this.request<{ data: any[] }>("/admin/users");
+  }
+
+  adminChangePassword(userId: string, password: string) {
+    return this.request<{ success: boolean }>(`/admin/users/${userId}/password`, {
+      method: "PUT",
+      body: JSON.stringify({ password }),
+    });
+  }
+
+  adminToggleRole(userId: string, isAdmin: boolean) {
+    return this.request<any>(`/admin/users/${userId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ isAdmin }),
+    });
+  }
 }
 
 export const api = new ApiClient();

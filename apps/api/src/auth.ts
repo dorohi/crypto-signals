@@ -1,12 +1,14 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
+import { prisma } from "@crypto-signals/db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
 export interface JwtPayload {
   userId: string;
   email: string;
+  isAdmin: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -42,4 +44,17 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   } catch {
     res.status(401).json({ error: "Недействительный токен" });
   }
+}
+
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const auth = (req as any).auth;
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    select: { isAdmin: true },
+  });
+  if (!user?.isAdmin) {
+    res.status(403).json({ error: "Доступ запрещён" });
+    return;
+  }
+  next();
 }
