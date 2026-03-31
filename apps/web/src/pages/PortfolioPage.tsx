@@ -175,6 +175,11 @@ const PortfolioPage = observer(function PortfolioPage() {
           note: txNote || undefined,
           date: txDate || undefined,
         });
+        // Обновим историю если открыта
+        if (historyDialog && menuPosition) {
+          const result = await api.getPortfolioTransactions(menuPosition.coinId);
+          setHistoryTransactions(result.data);
+        }
       }
       setTxDialog(false);
     } catch {
