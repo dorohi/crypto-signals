@@ -45,6 +45,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 const formatUsd = (value: number) => {
   if (Math.abs(value) >= 1) {
@@ -203,6 +204,21 @@ const PortfolioPage = observer(function PortfolioPage() {
     setTxCoinLabel(`${coin.name} (${coin.symbol.toUpperCase()})`);
     setCoinQuery("");
     setCoinResults([]);
+  };
+
+  const openDuplicateTxDialog = (tx: any, coinLabel: string) => {
+    setTxEditId(null);
+    setTxType(tx.type);
+    setTxCoinId(tx.coinId);
+    setTxCoinLabel(coinLabel);
+    setTxQuantity(String(tx.quantity));
+    setTxPrice(String(tx.price));
+    setTxFee(tx.fee ? String(tx.fee) : "");
+    setTxNote(tx.note || "");
+    setTxDate(new Date().toISOString().slice(0, 10));
+    setCoinQuery("");
+    setCoinResults([]);
+    setTxDialog(true);
   };
 
   const handleAddTxFromMenu = () => {
@@ -608,6 +624,13 @@ const PortfolioPage = observer(function PortfolioPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setHistoryDialog(false)}>Закрыть</Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => { if (menuPosition) openTxDialog(menuPosition.coinId, historyCoinName); }}
+          >
+            Новая транзакция
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -616,6 +639,10 @@ const PortfolioPage = observer(function PortfolioPage() {
         <MenuItem onClick={() => { if (txMenuTarget) openTxDialog(txMenuTarget.coinId, historyCoinName, txMenuTarget); setTxMenuAnchor(null); }}>
           <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
           <ListItemText>Редактировать</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if (txMenuTarget) openDuplicateTxDialog(txMenuTarget, historyCoinName); setTxMenuAnchor(null); }}>
+          <ListItemIcon><ContentCopyIcon fontSize="small" /></ListItemIcon>
+          <ListItemText>Дублировать</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => { if (txMenuTarget) handleDeleteTx(txMenuTarget.id); setTxMenuAnchor(null); }} sx={{ color: "error.main" }}>
           <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>
